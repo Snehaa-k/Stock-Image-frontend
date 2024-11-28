@@ -3,9 +3,9 @@ import axios from "axios";
 const token = localStorage.getItem("accessToken");
 
 
-export const API_URL = "http://127.0.0.1:8000";
+export const API_URL = "https://imagegallery.snehak.site";
 export const api = axios.create({
-    baseURL: "http://localhost:8000",
+    baseURL: "https://imagegallery.snehak.site",
   
   
     headers: {
