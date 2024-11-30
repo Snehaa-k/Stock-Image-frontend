@@ -3,7 +3,7 @@ import axios from "axios";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { api, API_URL } from "../../Apiservice/Apiservice";
-
+import { toast } from "react-toastify";
 
 
 export function DefaultGallery() {
@@ -44,32 +44,44 @@ export function DefaultGallery() {
     newTitles[index] = event.target.value;
     setTitles(newTitles);
   };
-
   const handleUpload = async () => {
     if (selectedImages.length === 0 || titles.length === 0) {
-      console.error("No images or titles to upload");
+      toast.error("No images or titles to upload");
       return;
     }
-
+  
+    
+    const validFormats = ["image/jpeg", "image/png"];
+    for (let image of selectedImages) {
+      if (!validFormats.includes(image.type)) {
+        toast.error("Only JPG and PNG formats are allowed");
+        return;
+      }
+    }
+  
     const formData = new FormData();
     selectedImages.forEach((image, index) => {
       formData.append("image", image);
       formData.append("title", titles[index] || "");
     });
-
+  
     try {
+      toast.loading("Uploading images...");
       const response = await api.post(`/imageupload/`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",  
+          "Content-Type": "multipart/form-data",
         },
-      }); 
+      });
       console.log(response);
-      
-      
+  
+      toast.dismiss(); 
+      toast.success("Images uploaded successfully!");
       setIsModalOpen(false);
-      fetchGallery(); 
+      fetchGallery();
     } catch (error) {
+      toast.dismiss(); 
       console.error("Failed to upload images:", error);
+      toast.error("Failed to upload images");
     }
   };
 
@@ -116,25 +128,35 @@ export function DefaultGallery() {
 
   const handleSaveEdit = async () => {
     if (editTitle.trim() === "") {
-      console.error("Title cannot be empty");
+      toast.error("Title cannot be empty");
       return;
     }
   
-    try {
-      const formData = new FormData();
-      formData.append("title", editTitle);
-  
-      if (editImage) {
-        formData.append("image", editImage);
+    if (editImage) {
+      const validFormats = ["image/jpeg", "image/png"];
+      if (!validFormats.includes(editImage.type)) {
+        toast.error("Only JPG and PNG formats are allowed");
+        return;
       }
+    }
   
-      await api.put(`/imagedit/${galleryData[editIndex].id}/`, formData, {
+    const formData = new FormData();
+    formData.append("title", editTitle);
+  
+    if (editImage) {
+      formData.append("image", editImage);
+    }
+  
+    try {
+      toast.loading("Saving changes...");
+      const response = await api.put(`/imagedit/${galleryData[editIndex].id}/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
   
-      
+      console.log(response);
+  
       const updatedImage = { ...galleryData[editIndex], title: editTitle };
       if (editImage) {
         updatedImage.image = URL.createObjectURL(editImage); 
@@ -145,10 +167,15 @@ export function DefaultGallery() {
         newData[editIndex] = updatedImage;
         return newData;
       });
-      fetchGallery()
+  
+      fetchGallery();
       setIsEditModalOpen(false);
+      toast.dismiss(); 
+      toast.success("Changes saved successfully!");
     } catch (error) {
+      toast.dismiss(); 
       console.error("Failed to edit image title or upload image:", error);
+      toast.error("Failed to save changes");
     }
   };
 
